@@ -58,3 +58,5 @@ Since the game uses WebAssembly (`sql.js`) and Monaco editor loaders over CDN, y
 * **Level 6: Set Ops & Views** — `UNION`, `INTERSECT`, `EXCEPT`, Common Table Expressions (`WITH`), and `CREATE VIEW`.
 * **Level 7: DML - Modify Data** — `INSERT INTO`, `UPDATE`, `DELETE`, and updates with `CASE` logic.
 * **Level 8: Boss Level 🔥** — Comprehensive gauntlet matching CSE 3101 past exams (2017–2024).
+
+Try Here- https://imgolamrabbani.github.io/ExamSQL/
