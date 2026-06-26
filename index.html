@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ExamSQL — CSE 3101 SQL Learning Game</title>
+  <meta name="description" content="Interactive SQL game for CSE 3101 exam prep. 8 levels, real SQL execution.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Share+Tech+Mono&family=Pixelify+Sans:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="crt-power-overlay"></div>
+
+  <!-- ═══════════════════ SPLASH ═══════════════════ -->
+  <div id="splash">
+    <div class="grid-bg"></div>
+    <div class="splash-inner">
+      <div class="badge">CSE 3101 · Database Systems · Exam Prep</div>
+      <h1 class="splash-title">ExamSQL</h1>
+      <p class="splash-sub">Write real SQL. See live results. Level up before your exam.<br>
+        Every question is from your past papers & syllabus</p>
+      <div class="stats">
+        <div class="stat"><span class="n">8</span><span class="l">Levels</span></div>
+        <div class="stat"><span class="n">64</span><span class="l">Questions</span></div>
+        <div class="stat"><span class="n">Live</span><span class="l">SQL Engine</span></div>
+        <div class="stat"><span class="n">2017–2024</span><span class="l">Past Exams</span></div>
+      </div>
+      <button class="btn-start" id="startBtn" onclick="startGame()" disabled>Start Learning</button>
+      <div class="load-msg" id="loadMsg">Loading SQL engine &amp; editor...</div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ GAME ═══════════════════ -->
+  <div id="game">
+    <div class="hdr">
+      <div class="hdr-logo" style="display:flex; align-items:center; gap:6px;">
+        <svg class="svg-icon" style="color:var(--cyan); width:15px; height:15px;" viewBox="0 0 24 24" fill="currentColor"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        <span>ExamSQL</span>
+      </div>
+      <span class="lvl-badge" id="lvlBadge">Level 1</span>
+      <div class="xp-wrap">
+        <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
+        <span class="xp-num" id="xpNum">0 XP</span>
+      </div>
+      <button onclick="toggleSound()" class="btn-sound" id="soundBtn" title="Toggle Sound">🔊 ON</button>
+      <div class="score" style="display:flex; align-items:center; gap:6px;">
+        <svg class="svg-icon" style="color:var(--yellow); width:13px; height:13px;" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+        <span id="scoreNum">0</span>
+      </div>
+    </div>
+    <div class="body">
+      <div class="sidebar">
+        <div class="sb-title">SQL Ladder</div>
+        <div id="lvlList"></div>
+        <hr class="sb-sep">
+        <div class="bm-hdr">
+          <span class="bm-hdr-lbl" style="display:flex; align-items:center; gap:4px;">
+            <svg class="svg-icon" style="width:11px; height:11px;" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            Bookmarks
+          </span>
+          <span class="bm-count" id="bmCount">0</span>
+        </div>
+        <div id="bmList"><div class="bm-empty">Nothing bookmarked yet</div></div>
+        <button class="sb-cheat" onclick="openCheat()" style="display:flex; align-items:center; justify-content:center; gap:6px;">
+          <svg class="svg-icon" style="width:12px; height:12px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Cheat Sheet Reference
+        </button>
+        <!-- Virtual Control Deck -->
+        <div class="control-deck">
+          <div class="control-deck-label">CABINET CONTROLS</div>
+          <div class="deck-row">
+            <div class="joystick-wrapper">
+              <div class="joystick-base">
+                <div class="joystick-knob" id="joystick"></div>
+              </div>
+              <div class="joystick-lbl">JOYSTICK</div>
+            </div>
+            <div class="buttons-wrapper">
+              <div class="btn-deck-row">
+                <button type="button" class="deck-btn btn-a" id="deckBtnA" onclick="runQuery()" title="Run SQL (Ctrl+Enter)">
+                  <span class="btn-lbl">A</span>
+                </button>
+                <button type="button" class="deck-btn btn-b" id="deckBtnB" onclick="submitAnswer()" title="Submit SQL (Ctrl+S)">
+                  <span class="btn-lbl">B</span>
+                </button>
+              </div>
+              <div class="btn-labels">
+                <span>RUN</span>
+                <span>SUBMIT</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="main">
+        <div class="qpanel">
+          <div class="qhdr">
+            <div class="qnum" id="qNum">1</div>
+            <div class="qtitle" id="qTitle">Loading...</div>
+            <div class="qctx" id="qCtx"></div>
+            <button class="bm-btn" id="bmBtn" onclick="toggleBookmark()" title="Bookmark this question" style="display:flex; align-items:center; justify-content:center;">
+              <svg class="svg-icon" style="width:14px; height:14px;" viewBox="0 0 24 24"><path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z"></path></svg>
+            </button>
+            <div class="qdots" id="qdots"></div>
+          </div>
+          <div class="qtext" id="qText">Loading question...</div>
+        </div>
+        <div class="schema-strip" id="schemaStrip"></div>
+        <div class="er">
+          <div class="ed-section">
+            <div class="ed-bar">
+              <span class="ed-label">SQL EDITOR</span>
+              <span style="font-size:11px;color:var(--t3)">Ctrl+Enter = Run</span>
+              <button class="btn btn-hint" onclick="openHint()">Hint</button>
+              <button class="btn btn-run" onclick="runQuery()" style="display:flex; align-items:center; gap:4px;">
+                <svg class="svg-icon" style="width:10px; height:10px;" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                Run
+              </button>
+              <button class="btn btn-submit" onclick="submitAnswer()" style="display:flex; align-items:center; gap:4px;">
+                <svg class="svg-icon" style="width:11px; height:11px; stroke:currentColor; stroke-width:3" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                Submit
+              </button>
+            </div>
+            <div id="editor-wrap">
+              <div class="scanline-laser"></div>
+              <div id="monaco-editor"></div>
+            </div>
+          </div>
+          <div class="res-panel" style="position:relative;">
+            <div class="scanline-laser"></div>
+            <div class="res-hdr">OUTPUT <span id="resStat"></span></div>
+            <div class="res-body" id="resBody">
+              <div class="msg info">Write your SQL and click <b>Run</b> to see results.<br>Click <b>Submit</b> when you\'re confident!</div>
+            </div>
+          </div>
+        </div>
+        <div class="bbar">
+          <span class="hint-ctr" id="hintCtr">3 hints remaining</span>
+          <div class="nav-btns" style="margin-left:auto; display:flex; align-items:center; gap:8px;">
+            <button class="btn btn-nav" id="prevBtn" onclick="prevQ()">Prev</button>
+            <span class="qprog" id="qProg" style="margin:0 4px">Question 1 of 4</span>
+            <button class="btn btn-nav" id="nextBtn" onclick="skipQ()">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ MODALS ═══════════════════ -->
+  <div class="overlay" id="hintModal">
+    <div class="mbox">
+      <h2 class="m-title">Need a Hint?</h2>
+      <div class="hint-box">
+        <div class="hint-lbl">Hint <span id="hintNum">1</span> of 3</div>
+        <div class="hint-txt" id="hintTxt"></div>
+      </div>
+      <p class="hint-pen" id="hintPen">Costs 15 points from your submission score</p>
+      <div class="m-acts">
+        <button class="btn-p" onclick="useHint()">Use Hint</button>
+        <button class="btn-s" onclick="closeModal('hintModal')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="okModal">
+    <div class="mbox">
+      <h2 class="m-title" id="okTitle">STAGE CLEAR</h2>
+      <p class="m-desc" id="okDesc"></p>
+      <div class="m-acts">
+        <button class="btn-p" onclick="nextQ()">Next Question →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay" id="lvlModal">
+    <div class="mbox">
+      <h2 class="m-title" id="lvlMTitle">STAGE COMPLETE</h2>
+      <p class="m-desc" id="lvlMDesc"></p>
+      <p style="font-size:20px;font-weight:800;color:var(--cyan);margin-bottom:20px" id="lvlXP"></p>
+      <div class="m-acts"><button class="btn-p" onclick="nextLevel()">Next Level →</button></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="winModal">
+    <div class="mbox">
+      <h2 class="m-title" style="color:var(--green)">VICTORY! EXAM READY</h2>
+      <p class="m-desc">All 8 levels complete! You've practiced every SQL type in your syllabus. Go ace that exam!</p>
+      <p style="font-size:18px;font-weight:800;color:var(--yellow);margin-bottom:20px">Final Score: <span id="finalScore"></span> pts</p>
+      <div class="m-acts"><button class="btn-p" onclick="location.reload()">Play Again</button></div>
+    </div>
+  </div>
+
+  <div class="overlay" id="cheatModal">
+    <div class="mbox wide" style="max-height:85vh;display:flex;flex-direction:column">
+      <h2 class="m-title" style="margin-bottom:14px;flex-shrink:0">SQL Quick Reference</h2>
+      <div class="cheat-scroll" id="cheatBody"></div>
+      <button class="btn-s" style="margin-top:14px;flex-shrink:0" onclick="closeModal('cheatModal')">Close</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js" crossorigin="anonymous"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
