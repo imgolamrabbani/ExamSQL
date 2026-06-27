@@ -12,7 +12,7 @@ Features real-time SQL syntax highlighting, live database schema rendering, resp
 - **👾 Retro Arcade Aesthetics**: CRT scanline flickering, screen shakes, lasers, and custom fonts (Pixelify Sans, Share Tech Mono, Press Start 2P, VT323) with a +2px sizing boost for premium readability.
 - **🎵 Retro Chiptunes**: Fully programmatic synthesizers generated on-the-fly using the HTML5 Web Audio API (no heavy audio files to load, works fully offline).
 - **🕹️ Virtual Control Deck**: Drag-to-slide joysticks for navigating levels/questions and light-up buttons for arcade Cabinet controls.
-- **📖 8 Progressive Levels (64 Questions)**: Covers everything from basic DDL schema creation and filtering to complex INNER/LEFT/SELF JOINs, nested subqueries, set operations, view declarations, and DML updates.
+- **📖 10 Progressive Levels (164 Questions)**: Covers everything from basic DDL schema creation and filtering to complex INNER/LEFT/SELF JOINs, nested subqueries, set operations, view declarations, and DML updates.
 - **🔖 Bookmark System**: Save tricky questions for review. Solved answers are cached in the editor input fields, and your progress is saved locally using `localStorage`.
 
 ---
@@ -26,7 +26,7 @@ ExamSQL/
 ├── css/
 │   └── style.css       # Scanline effects, layouts, joystick, and overrides
 └── js/
-    ├── levels.js       # Complete database setups and 64 SQL questions
+    ├── levels.js       # Complete database setups and 164 SQL questions
     └── game.js         # Game state machine, audio synth, and Monaco configs
 ```
 
@@ -58,5 +58,7 @@ Since the game uses WebAssembly (`sql.js`) and Monaco editor loaders over CDN, y
 * **Level 6: Set Ops & Views** — `UNION`, `INTERSECT`, `EXCEPT`, Common Table Expressions (`WITH`), and `CREATE VIEW`.
 * **Level 7: DML - Modify Data** — `INSERT INTO`, `UPDATE`, `DELETE`, and updates with `CASE` logic.
 * **Level 8: Boss Level 🔥** — Comprehensive gauntlet matching CSE 3101 past exams (2017–2024).
+* **Level 9: Class Tests** — Complete CT Question Bank covering CT-1, CT-2, CT-3, CT-4 across multiple years (2018–2024).
+* **Level 10: Semester Finals** — Complete Semester Final Exam Question Bank covering all questions from past papers (2017–2024).
 
 Try Here- https://imgolamrabbani.github.io/ExamSQL/
