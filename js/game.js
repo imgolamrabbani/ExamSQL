@@ -20,6 +20,50 @@ const G = {
   bookmarks: JSON.parse(localStorage.getItem('examsql_bm') || '[]')
 };
 
+const DB_MAP = {
+  DB_ECOM: typeof DB_ECOM !== 'undefined' ? DB_ECOM : '',
+  DB_UNI: typeof DB_UNI !== 'undefined' ? DB_UNI : '',
+  DB_EMP: typeof DB_EMP !== 'undefined' ? DB_EMP : '',
+  DB_INS: typeof DB_INS !== 'undefined' ? DB_INS : '',
+  DB_STUDENT_COURSE: typeof DB_STUDENT_COURSE !== 'undefined' ? DB_STUDENT_COURSE : '',
+  DB_HEALTHCARE: typeof DB_HEALTHCARE !== 'undefined' ? DB_HEALTHCARE : '',
+  DB_SOCIAL: typeof DB_SOCIAL !== 'undefined' ? DB_SOCIAL : '',
+  DB_BOOK_CHAR: typeof DB_BOOK_CHAR !== 'undefined' ? DB_BOOK_CHAR : '',
+  DB_BOOK_PUB: typeof DB_BOOK_PUB !== 'undefined' ? DB_BOOK_PUB : '',
+  DB_AUTHOR_BOOK: typeof DB_AUTHOR_BOOK !== 'undefined' ? DB_AUTHOR_BOOK : '',
+  DB_HOTEL: typeof DB_HOTEL !== 'undefined' ? DB_HOTEL : ''
+};
+
+const SC_MAP = {
+  SC_ECOM: typeof SC_ECOM !== 'undefined' ? SC_ECOM : null,
+  SC_UNI: typeof SC_UNI !== 'undefined' ? SC_UNI : null,
+  SC_EMP: typeof SC_EMP !== 'undefined' ? SC_EMP : null,
+  SC_INS: typeof SC_INS !== 'undefined' ? SC_INS : null,
+  SC_STUDENT_COURSE: typeof SC_STUDENT_COURSE !== 'undefined' ? SC_STUDENT_COURSE : null,
+  SC_HEALTHCARE: typeof SC_HEALTHCARE !== 'undefined' ? SC_HEALTHCARE : null,
+  SC_SOCIAL: typeof SC_SOCIAL !== 'undefined' ? SC_SOCIAL : null,
+  SC_BOOK_CHAR: typeof SC_BOOK_CHAR !== 'undefined' ? SC_BOOK_CHAR : null,
+  SC_BOOK_PUB: typeof SC_BOOK_PUB !== 'undefined' ? SC_BOOK_PUB : null,
+  SC_AUTHOR_BOOK: typeof SC_AUTHOR_BOOK !== 'undefined' ? SC_AUTHOR_BOOK : null,
+  SC_HOTEL: typeof SC_HOTEL !== 'undefined' ? SC_HOTEL : null
+};
+
+function getActiveSetup(q, lv) {
+  let s = q.extra || q.setup || lv.setup;
+  if (typeof s === 'string' && DB_MAP[s]) {
+    return DB_MAP[s];
+  }
+  return s;
+}
+
+function getActiveSchema(q, lv) {
+  let s = q.schema || lv.schema;
+  if (typeof s === 'string' && SC_MAP[s]) {
+    return SC_MAP[s];
+  }
+  return s;
+}
+
 /* ════════════════════════════════════════════════════════════
    DATABASE HELPERS
 ════════════════════════════════════════════════════════════ */
@@ -42,11 +86,11 @@ function newDB(setup) {
 function rebuildDB(lvl, qi) {
   const lv = LEVELS[lvl];
   const q = lv.qs[qi];
-  const activeSetup = q.extra || lv.setup;
+  const activeSetup = getActiveSetup(q, lv);
   newDB(activeSetup);
   for (let j = 0; j < qi; j++) {
     const pq = lv.qs[j];
-    const pqSetup = pq.extra || lv.setup;
+    const pqSetup = getActiveSetup(pq, lv);
     if (pqSetup === activeSetup) {
       if (pq.type === 'view' && pq.exp) {
         try {
@@ -183,6 +227,9 @@ function loadQ(qi) {
   rebuildDB(G.lvl, qi);
   const lv = LEVELS[G.lvl];
   const q = lv.qs[qi];
+
+  const currentSchema = getActiveSchema(q, lv);
+  renderSchema(currentSchema);
 
   document.getElementById('qNum').textContent = qi + 1;
   document.getElementById('qTitle').textContent = q.title;
