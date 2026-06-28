@@ -805,11 +805,11 @@ function playAsGuest() {
   startGame();
 }
 
-async function logout() {
+function logout() {
   if (sb) {
     playSound('confirm');
     try {
-      await sb.auth.signOut();
+      sb.auth.signOut();
     } catch (e) {
       console.error('Sign out error:', e);
     }
