@@ -61,6 +61,9 @@
           <button class="btn-auth btn-guest" id="guestPlayBtn" onclick="playAsGuest()" style="display:none;" disabled>
             <span>🕹️ PLAY AS GUEST (LOCAL SAVE)</span>
           </button>
+          <div style="margin-top: 14px; text-align: center;">
+            <button class="btn-sound" onclick="openLeaderboard()" style="font-size:14px; padding: 4px 14px;">🏆 HALL OF FAME (TOP 10)</button>
+          </div>
         </div>
 
         <!-- Logged In Status -->
@@ -121,10 +124,16 @@
           <span class="bm-count" id="bmCount">0</span>
         </div>
         <div id="bmList"><div class="bm-empty">Nothing bookmarked yet</div></div>
-        <button class="sb-cheat" onclick="openCheat()" style="display:flex; align-items:center; justify-content:center; gap:6px;">
-          <svg class="svg-icon" style="width:12px; height:12px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          Cheat Sheet Reference
-        </button>
+        <div style="display: flex; gap: 8px; margin-top: 10px; flex-shrink: 0; width: 100%;">
+          <button class="sb-cheat" onclick="openCheat()" style="flex: 1; display:flex; align-items:center; justify-content:center; gap:4px; font-size:12px;">
+            <svg class="svg-icon" style="width:11px; height:11px;" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+            Cheat Sheet
+          </button>
+          <button class="sb-cheat" onclick="openLeaderboard()" style="flex: 1; display:flex; align-items:center; justify-content:center; gap:4px; font-size:12px;">
+            <svg class="svg-icon" style="width:11px; height:11px; color:var(--yellow);" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            Leaderboard
+          </button>
+        </div>
         <!-- Virtual Control Deck -->
         <div class="control-deck">
           <div class="control-deck-label">CABINET CONTROLS</div>
@@ -255,6 +264,15 @@
       <h2 class="m-title" style="margin-bottom:14px;flex-shrink:0">SQL Quick Reference</h2>
       <div class="cheat-scroll" id="cheatBody"></div>
       <button class="btn-s" style="margin-top:14px;flex-shrink:0" onclick="closeModal('cheatModal')">Close</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="leaderboardModal">
+    <div class="mbox wide" style="max-height:85vh; display:flex; flex-direction:column;">
+      <h2 class="m-title" style="margin-bottom:14px; flex-shrink:0;">🏆 ARCADE HALL OF FAME</h2>
+      <p class="m-desc" style="margin-bottom:14px; flex-shrink:0;">Top 10 ranked SQL Masters on the cabinet</p>
+      <div id="leaderboardList" style="flex:1; overflow-y:auto; border:2px solid var(--bd); background:var(--bg0); margin-bottom:14px;"></div>
+      <button class="btn-s" style="margin-top:auto; flex-shrink:0;" onclick="closeModal('leaderboardModal')">Close</button>
     </div>
   </div>
 

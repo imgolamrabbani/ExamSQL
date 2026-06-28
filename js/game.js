@@ -185,13 +185,14 @@ function renderLvlList() {
     const p = G.prog[i];
     const isAct = i === G.lvl, isDone = p.done;
     const cls = isDone ? 'done' : isAct ? 'act' : '';
+    const solved = p.answers ? Object.keys(p.answers).length : 0;
     return `<div class="lv-item ${cls}" onclick="goLvl(${i})" id="lvi${i}">
       <div class="lv-icon" style="font-family:'Geist Mono', monospace; font-size:10px; font-weight:600; color:var(--t2)">${String(
         i + 1
       ).padStart(2, '0')}</div>
       <div class="lv-meta">
         <div class="lv-name">L${i + 1}: ${lv.title}</div>
-        <div class="lv-prog">${isDone ? 'Complete' : `${p.qDone}/${lv.qs.length} done`}</div>
+        <div class="lv-prog">${isDone ? 'Complete' : `${solved}/${lv.qs.length} done`}</div>
       </div>
       ${isDone ? '<span class="lv-ck">✓</span>' : ''}
     </div>`;
@@ -202,7 +203,8 @@ function renderDots() {
   const lv = LEVELS[G.lvl];
   document.getElementById('qdots').innerHTML = lv.qs
     .map((_, i) => {
-      const cls = i < G.prog[G.lvl].qDone ? 'done' : i === G.q ? 'act' : '';
+      const isSolved = !!(G.prog[G.lvl].answers && G.prog[G.lvl].answers[i]);
+      const cls = isSolved ? 'done' : i === G.q ? 'act' : '';
       return `<div class="qdot ${cls}" onclick="loadQ(${i})" style="cursor:pointer" title="Go to Question ${i + 1}"></div>`;
     })
     .join('');
@@ -463,14 +465,15 @@ function submitAnswer() {
       : `<div class="msg ok">${msg}<br><br><b>+${pts} points</b> earned!</div>`;
     rs.innerHTML = '<span class="badge-v ok">Correct!</span>';
 
-    G.prog[G.lvl].qDone = Math.max(G.prog[G.lvl].qDone, G.q + 1);
     if (!G.prog[G.lvl].answers) G.prog[G.lvl].answers = {};
     G.prog[G.lvl].answers[G.q] = userSQL;
+    G.prog[G.lvl].qDone = Object.keys(G.prog[G.lvl].answers).length;
     renderLvlList();
     renderDots();
     updateHdr();
 
-    if (G.q >= lv.qs.length - 1) {
+    const totalSolved = Object.keys(G.prog[G.lvl].answers).length;
+    if (totalSolved >= lv.qs.length) {
       setTimeout(() => {
         showLvlDone();
       }, 400);
@@ -564,6 +567,7 @@ function saveLocalState() {
 async function saveCloudProgress() {
   if (!sb || !G.user) return;
   try {
+    const profile = G.user.user_metadata || {};
     const { error } = await sb
       .from('user_progress')
       .upsert({
@@ -574,6 +578,8 @@ async function saveCloudProgress() {
         q: G.q,
         prog: G.prog,
         bookmarks: G.bookmarks,
+        display_name: profile.full_name || G.user.email || 'Arcade Player',
+        avatar_url: profile.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y',
         updated_at: new Date().toISOString()
       });
     if (error) {
@@ -802,7 +808,11 @@ function playAsGuest() {
 async function logout() {
   if (sb) {
     playSound('confirm');
-    await sb.auth.signOut();
+    try {
+      await sb.auth.signOut();
+    } catch (e) {
+      console.error('Sign out error:', e);
+    }
   }
   G.user = null;
   localStorage.removeItem('examsql_progress');
@@ -996,6 +1006,86 @@ UPDATE t SET sal = sal * 1.10;  -- 10% raise</div></div>
 function openCheat() {
   document.getElementById('cheatBody').innerHTML = CHEAT;
   showM('cheatModal');
+}
+
+async function openLeaderboard() {
+  playSound('select');
+  showM('leaderboardModal');
+  const boardEl = document.getElementById('leaderboardList');
+  if (!boardEl) return;
+  boardEl.innerHTML = '<div class="auth-loading" style="font-size:14px; text-align:center; padding:20px;">DOWNLOADING HIGH SCORES...</div>';
+
+  if (!sb) {
+    boardEl.innerHTML = '<div class="msg err">Offline mode. Leaderboard unavailable.</div>';
+    return;
+  }
+
+  try {
+    const { data, error } = await sb
+      .from('user_progress')
+      .select('score, xp, display_name, avatar_url')
+      .order('score', { ascending: false })
+      .order('xp', { ascending: false })
+      .limit(10);
+
+    if (error) {
+      console.error('Leaderboard query error:', error.message);
+      boardEl.innerHTML = `<div class="msg err">Failed to fetch leaderboard: ${error.message}</div>`;
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      boardEl.innerHTML = '<div class="bm-empty" style="text-align:center; padding:20px;">No high scores recorded yet! Be the first!</div>';
+      return;
+    }
+
+    // Filter display names to be friendly & prevent HTML injection
+    const cleanHTML = data.map((row, idx) => {
+      const rawName = row.display_name || 'Arcade Player';
+      // Strip email domains for privacy & screen spacing
+      const name = rawName.includes('@') ? rawName.split('@')[0] : rawName;
+      // Sanitize name
+      const cleanName = name.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      const avatar = row.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+      const rankIcon = idx === 0 ? '🥇' : idx === 1 ? '🥈' : idx === 2 ? '🥉' : `#${idx + 1}`;
+      
+      const isMe = G.user && (row.display_name === G.user.user_metadata?.full_name || row.display_name === G.user.email);
+      const styleMe = isMe ? 'background: rgba(0, 255, 255, 0.08); font-weight: bold;' : '';
+      
+      return `
+        <tr style="${styleMe}">
+          <td style="text-align: center; font-family: 'Press Start 2P', cursive; font-size: 10px; padding: 10px 0; color: var(--t2);">${rankIcon}</td>
+          <td style="display: flex; align-items: center; gap: 8px; padding: 6px 10px;">
+            <img src="${avatar}" style="width: 22px; height: 22px; border: 1px solid var(--bd2); background: #000;" alt="">
+            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 140px; color:#fff;">${cleanName}</span>
+          </td>
+          <td style="text-align: right; font-family: 'VT323', monospace; font-size: 19px; color: var(--yellow); padding-right: 12px;">${row.score.toLocaleString()}</td>
+          <td style="text-align: right; font-family: 'VT323', monospace; font-size: 19px; color: var(--cyan); padding-right: 12px;">${row.xp.toLocaleString()}</td>
+        </tr>
+      `;
+    }).join('');
+
+    boardEl.innerHTML = `
+      <table class="rtable" style="font-size: 14.5px; width: 100%;">
+        <thead>
+          <tr>
+            <th style="width: 60px; text-align: center; font-size: 11px; font-family: 'Press Start 2P', cursive;">RANK</th>
+            <th style="font-size: 11px; font-family: 'Press Start 2P', cursive;">PLAYER</th>
+            <th style="text-align: right; color: var(--yellow); font-size: 11px; font-family: 'Press Start 2P', cursive; padding-right: 12px;">SCORE</th>
+            <th style="text-align: right; color: var(--cyan); font-size: 11px; font-family: 'Press Start 2P', cursive; padding-right: 12px;">XP</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${cleanHTML}
+        </tbody>
+      </table>
+    `;
+
+  } catch (e) {
+    console.error('Leaderboard fetch crash:', e);
+    boardEl.innerHTML = `<div class="msg err">Load error.</div>`;
+  }
 }
 
 /* ════════════════════════════════════════════════════════════
