@@ -1506,3 +1506,183 @@ body::after {
 .joystick-lbl, .btn-labels { font-size: 13px; }
 .btn-lbl { font-size: 10px; }
 .btn-sound { font-size: 15px; }
+
+/* ─── AUTHENTICATION STYLES (Supabase & Google OAuth) ─── */
+.auth-section {
+  margin-top: 20px;
+  min-height: 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.auth-loading {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 16px;
+  color: var(--green);
+  text-shadow: 0 0 8px rgba(57, 255, 20, 0.5);
+  animation: authPulse 1.5s infinite ease-in-out;
+}
+
+@keyframes authPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.auth-box {
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.btn-auth {
+  width: 100%;
+  border: 3px double var(--bd);
+  background: var(--bg2);
+  color: #fff;
+  padding: 10px 16px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-family: 'Pixelify Sans', monospace !important;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  transition: all 0.1s ease;
+  box-shadow: -3px -3px 0px 0px rgba(0,0,0,0.6) inset, 3px 3px 0px 0px rgba(255,255,255,0.2) inset;
+}
+
+.btn-auth:active {
+  transform: translate(2px, 2px);
+  box-shadow: 1px 1px 0px 0px rgba(0,0,0,0.8) inset;
+}
+
+.btn-google {
+  border-color: #ea4335;
+  color: #fff;
+  background: rgba(234, 67, 53, 0.08);
+}
+.btn-google:hover {
+  background: rgba(234, 67, 53, 0.2);
+  box-shadow: 0 0 12px rgba(234, 67, 53, 0.4), -3px -3px 0px 0px rgba(0,0,0,0.6) inset, 3px 3px 0px 0px rgba(255,255,255,0.2) inset;
+}
+
+.btn-guest {
+  border-color: var(--yellow);
+  color: var(--yellow);
+  background: rgba(255, 204, 0, 0.06);
+}
+.btn-guest:hover {
+  background: rgba(255, 204, 0, 0.18);
+  box-shadow: 0 0 12px rgba(255, 204, 0, 0.3), -3px -3px 0px 0px rgba(0,0,0,0.6) inset, 3px 3px 0px 0px rgba(255,255,255,0.2) inset;
+}
+
+.btn-logout-splash {
+  border-color: var(--red);
+  color: var(--red);
+  background: rgba(255, 0, 85, 0.06);
+  flex-shrink: 0;
+  max-width: 120px;
+}
+.btn-logout-splash:hover {
+  background: rgba(255, 0, 85, 0.18);
+}
+
+.user-profile-card {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 3px double var(--bd);
+  padding: 12px 18px;
+  text-align: left;
+}
+
+.user-avatar-large {
+  width: 52px;
+  height: 52px;
+  border: 2px solid var(--bd2);
+  image-rendering: pixelated;
+  background: #000;
+  box-shadow: 0 0 8px rgba(0, 255, 255, 0.2);
+}
+
+.user-profile-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.user-profile-name {
+  font-family: 'Pixelify Sans', monospace;
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 4px rgba(255, 255, 255, 0.2);
+}
+
+.user-profile-email {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--t3);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* User Badge in game HUD header */
+.user-hud {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--bg1);
+  border: 2px solid var(--bd);
+  padding: 3px 10px;
+  height: 28px;
+  box-shadow: -2px -2px 0px 0px rgba(0,0,0,0.6) inset;
+}
+
+.user-hud-avatar {
+  width: 18px;
+  height: 18px;
+  border: 1px solid var(--bd2);
+  background: #000;
+}
+
+.user-hud-name {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: #fff;
+  font-weight: 700;
+  max-width: 90px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.btn-logout-hud {
+  background: none;
+  border: none;
+  color: var(--t3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
+  margin-left: 2px;
+  transition: all 0.1s ease;
+}
+
+.btn-logout-hud:hover {
+  color: var(--red);
+  transform: scale(1.1);
+}
+

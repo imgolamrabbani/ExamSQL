@@ -26,7 +26,38 @@
         <div class="stat"><span class="n">Live</span><span class="l">SQL Engine</span></div>
         <div class="stat"><span class="n">2017–2024</span><span class="l">Past Exams</span></div>
       </div>
-      <button class="btn-start" id="startBtn" onclick="startGame()" disabled>Start Learning</button>
+      <!-- Authentication Section -->
+      <div id="auth-section" class="auth-section">
+        <div id="auth-loading" class="auth-loading">Checking arcade terminal authorization...</div>
+        
+        <!-- Logged Out Status -->
+        <div id="auth-logged-out" class="auth-box" style="display: none;">
+          <button class="btn-auth btn-google" id="googleLoginBtn" onclick="loginWithGoogle()" style="display:none; align-items:center; justify-content:center; gap:10px; margin: 0 auto 12px;" disabled>
+            <svg class="svg-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
+              <path d="M12.24 10.285V14.4h6.887c-.648 2.41-2.519 4.114-5.136 4.114-3.51 0-6.355-2.846-6.355-6.355s2.845-6.355 6.355-6.355c1.61 0 3.08.597 4.22 1.587l3.055-3.055C19.345 2.583 15.992 1.345 12.24 1.345 6.275 1.345 1.345 6.275 1.345 12.24s4.93 10.895 10.895 10.895c6.23 0 10.895-4.387 10.895-10.895 0-.746-.075-1.463-.224-2.155H12.24z"/>
+            </svg>
+            <span>SIGN IN WITH GOOGLE</span>
+          </button>
+          <button class="btn-auth btn-guest" id="guestPlayBtn" onclick="playAsGuest()" style="display:none;" disabled>
+            <span>🕹️ PLAY AS GUEST (LOCAL SAVE)</span>
+          </button>
+        </div>
+
+        <!-- Logged In Status -->
+        <div id="auth-logged-in" class="auth-box" style="display: none;">
+          <div class="user-profile-card">
+            <img id="user-avatar" class="user-avatar-large" src="" alt="Avatar">
+            <div class="user-profile-info">
+              <div id="user-name" class="user-profile-name"></div>
+              <div id="user-email" class="user-profile-email"></div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 12px; justify-content: center; margin-top: 15px;">
+            <button class="btn-start" id="startBtn" onclick="startGame()" disabled>Start Game</button>
+            <button class="btn-auth btn-logout-splash" onclick="logout()">LOG OUT</button>
+          </div>
+        </div>
+      </div>
       <div class="load-msg" id="loadMsg">Loading SQL engine &amp; editor...</div>
     </div>
   </div>
@@ -42,6 +73,14 @@
       <div class="xp-wrap">
         <div class="xp-track"><div class="xp-fill" id="xpFill"></div></div>
         <span class="xp-num" id="xpNum">0 XP</span>
+      </div>
+      <!-- User Profile HUD Badge -->
+      <div id="user-hud" class="user-hud" style="display: none;">
+        <img id="user-hud-avatar" class="user-hud-avatar" src="" alt="Avatar">
+        <span id="user-hud-name" class="user-hud-name"></span>
+        <button class="btn-logout-hud" onclick="logout()" title="Log Out">
+          <svg class="svg-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="width: 12px; height: 12px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
       </div>
       <button onclick="toggleSound()" class="btn-sound" id="soundBtn" title="Toggle Sound">🔊 ON</button>
       <div class="score" style="display:flex; align-items:center; gap:6px;">
@@ -200,6 +239,7 @@
   </div>
 
   <!-- ═══════════════════ SCRIPTS ═══════════════════ -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.2/sql-wasm.js" crossorigin="anonymous"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js" crossorigin="anonymous"></script>
   <script src="js/levels.js"></script>

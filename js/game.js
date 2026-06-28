@@ -17,8 +17,18 @@ const G = {
   t0: null,
   sqlOK: false,
   monacoOK: false,
-  bookmarks: JSON.parse(localStorage.getItem('examsql_bm') || '[]')
+  bookmarks: JSON.parse(localStorage.getItem('examsql_bm') || '[]'),
+  user: null
 };
+
+// Supabase Client Initialization
+const supabaseUrl = 'https://wxxlzukqsalbvjwzwrti.supabase.co';
+const supabaseKey = 'sb_publishable_6qkxpCkPeYNXjH8dT6JzAw_lunNozei';
+let supabase = null;
+if (window.supabase) {
+  supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+}
+
 
 const DB_MAP = {
   DB_ECOM: typeof DB_ECOM !== 'undefined' ? DB_ECOM : '',
@@ -539,7 +549,7 @@ function goLvl(i) {
 /* ════════════════════════════════════════════════════════════
    PROGRESS PERSISTENCE
 ════════════════════════════════════════════════════════════ */
-function saveProgress() {
+function saveLocalState() {
   const data = {
     lvl: G.lvl,
     q: G.q,
@@ -548,6 +558,134 @@ function saveProgress() {
     prog: G.prog
   };
   localStorage.setItem('examsql_progress', JSON.stringify(data));
+  localStorage.setItem('examsql_bm', JSON.stringify(G.bookmarks));
+}
+
+async function saveCloudProgress() {
+  if (!supabase || !G.user) return;
+  try {
+    const { error } = await supabase
+      .from('user_progress')
+      .upsert({
+        user_id: G.user.id,
+        score: G.score,
+        xp: G.xp,
+        lvl: G.lvl,
+        q: G.q,
+        prog: G.prog,
+        bookmarks: G.bookmarks,
+        updated_at: new Date().toISOString()
+      });
+    if (error) {
+      console.error('Error saving cloud progress:', error.message);
+    }
+  } catch (e) {
+    console.error('Cloud save error:', e);
+  }
+}
+
+function saveProgress() {
+  saveLocalState();
+  if (supabase && G.user) {
+    saveCloudProgress();
+  }
+}
+
+async function loadCloudProgress() {
+  if (!supabase || !G.user) return;
+  try {
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('*')
+      .eq('user_id', G.user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching cloud progress:', error.message);
+      return;
+    }
+
+    const localRaw = localStorage.getItem('examsql_progress');
+    const localBM = localStorage.getItem('examsql_bm');
+    let localData = null;
+    let localBookmarks = [];
+    if (localRaw) {
+      try { localData = JSON.parse(localRaw); } catch (e) {}
+    }
+    if (localBM) {
+      try { localBookmarks = JSON.parse(localBM); } catch (e) {}
+    }
+
+    const wasSigningIn = sessionStorage.getItem('examsql_signing_in') === 'true';
+    sessionStorage.removeItem('examsql_signing_in'); // Consume redirect flag
+
+    if (data) {
+      // Merge logic: use local state if explicitly signing in now and local progress is further ahead
+      let useLocal = false;
+      if (wasSigningIn && localData && (localData.xp > (data.xp || 0))) {
+        useLocal = true;
+      }
+
+      if (useLocal) {
+        G.score = localData.score || 0;
+        G.xp = localData.xp || 0;
+        G.lvl = localData.lvl || 0;
+        G.q = localData.q || 0;
+        if (localData.prog) G.prog = localData.prog;
+        G.bookmarks = localBookmarks || [];
+        // Save local progress to the cloud
+        await saveCloudProgress();
+      } else {
+        // Load cloud state
+        G.score = data.score || 0;
+        G.xp = data.xp || 0;
+        G.lvl = data.lvl || 0;
+        G.q = data.q || 0;
+        if (data.prog && Array.isArray(data.prog)) {
+          data.prog.forEach((p, idx) => {
+            if (G.prog[idx]) {
+              G.prog[idx].done = !!p.done;
+              G.prog[idx].qDone = typeof p.qDone === 'number' ? p.qDone : 0;
+              G.prog[idx].answers = p.answers || {};
+            }
+          });
+        }
+        if (data.bookmarks && Array.isArray(data.bookmarks)) {
+          G.bookmarks = data.bookmarks;
+        }
+      }
+    } else {
+      // Create new progress row in cloud
+      if (localData) {
+        G.score = localData.score || 0;
+        G.xp = localData.xp || 0;
+        G.lvl = localData.lvl || 0;
+        G.q = localData.q || 0;
+        if (localData.prog) G.prog = localData.prog;
+        G.bookmarks = localBookmarks || [];
+      }
+      
+      const { error: insertErr } = await supabase
+        .from('user_progress')
+        .insert([{
+          user_id: G.user.id,
+          score: G.score,
+          xp: G.xp,
+          lvl: G.lvl,
+          q: G.q,
+          prog: G.prog,
+          bookmarks: G.bookmarks
+        }]);
+
+      if (insertErr) {
+        console.error('Error creating cloud progress:', insertErr.message);
+      }
+    }
+
+    saveLocalState();
+  } catch (e) {
+    console.error('Cloud load crashed:', e);
+  }
 }
 
 function loadProgress() {
@@ -576,6 +714,103 @@ function loadProgress() {
 }
 
 /* ════════════════════════════════════════════════════════════
+   SUPABASE AUTHENTICATION
+════════════════════════════════════════════════════════════ */
+let isEngineReady = false;
+
+function showLoggedState(isLoggedIn) {
+  const loggedOutDiv = document.getElementById('auth-logged-out');
+  const loggedInDiv = document.getElementById('auth-logged-in');
+  const userHud = document.getElementById('user-hud');
+
+  if (isLoggedIn && G.user) {
+    if (loggedOutDiv) loggedOutDiv.style.display = 'none';
+    if (loggedInDiv) loggedInDiv.style.display = 'block';
+
+    const nameEl = document.getElementById('user-name');
+    const emailEl = document.getElementById('user-email');
+    const avatarEl = document.getElementById('user-avatar');
+
+    const profile = G.user.user_metadata || {};
+    if (nameEl) nameEl.textContent = profile.full_name || G.user.email || 'Arcade Player';
+    if (emailEl) emailEl.textContent = G.user.email || '';
+    if (avatarEl) avatarEl.src = profile.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+
+    if (userHud) {
+      userHud.style.display = 'flex';
+      const hudAvatar = document.getElementById('user-hud-avatar');
+      const hudName = document.getElementById('user-hud-name');
+      if (hudAvatar) hudAvatar.src = profile.avatar_url || 'https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y';
+      if (hudName) hudName.textContent = profile.full_name || G.user.email.split('@')[0] || 'Player';
+    }
+  } else {
+    if (loggedOutDiv) loggedOutDiv.style.display = 'block';
+    if (loggedInDiv) loggedInDiv.style.display = 'none';
+    if (userHud) userHud.style.display = 'none';
+  }
+}
+
+function enableAuthControls() {
+  const authLoading = document.getElementById('auth-loading');
+  if (authLoading) authLoading.style.display = 'none';
+
+  const gBtn = document.getElementById('googleLoginBtn');
+  const guestBtn = document.getElementById('guestPlayBtn');
+  const startBtn = document.getElementById('startBtn');
+  const loadMsg = document.getElementById('loadMsg');
+
+  if (isEngineReady) {
+    if (gBtn) { gBtn.disabled = false; gBtn.style.display = 'flex'; }
+    if (guestBtn) { guestBtn.disabled = false; guestBtn.style.display = 'inline-flex'; }
+    if (startBtn) startBtn.disabled = false;
+
+    if (G.user) {
+      showLoggedState(true);
+      if (loadMsg) loadMsg.textContent = '✅ Profile Loaded! Ready to start.';
+    } else {
+      showLoggedState(false);
+      if (loadMsg) loadMsg.textContent = '✅ Ready! Sign in or play as guest.';
+    }
+  }
+}
+
+async function loginWithGoogle() {
+  if (!supabase) {
+    alert("Supabase client is offline or failed to load. Check your internet connection.");
+    return;
+  }
+  playSound('confirm');
+  sessionStorage.setItem('examsql_signing_in', 'true');
+  
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + window.location.pathname
+    }
+  });
+  if (error) {
+    console.error('Google login error:', error.message);
+    alert('Google login failed: ' + error.message);
+  }
+}
+
+function playAsGuest() {
+  playSound('confirm');
+  startGame();
+}
+
+async function logout() {
+  if (supabase) {
+    playSound('confirm');
+    await supabase.auth.signOut();
+  }
+  G.user = null;
+  localStorage.removeItem('examsql_progress');
+  localStorage.removeItem('examsql_bm');
+  location.reload();
+}
+
+/* ════════════════════════════════════════════════════════════
    BOOKMARKS FEATURE
 ════════════════════════════════════════════════════════════ */
 function toggleBookmark() {
@@ -586,7 +821,7 @@ function toggleBookmark() {
   } else {
     G.bookmarks.splice(idx, 1);
   }
-  localStorage.setItem('examsql_bm', JSON.stringify(G.bookmarks));
+  saveProgress();
   updateBmBtn();
   renderBookmarks();
 }
@@ -632,7 +867,7 @@ function renderBookmarks() {
 
 function removeBm(index) {
   G.bookmarks.splice(index, 1);
-  localStorage.setItem('examsql_bm', JSON.stringify(G.bookmarks));
+  saveProgress();
   updateBmBtn();
   renderBookmarks();
 }
@@ -1113,8 +1348,8 @@ let sqlOK = false, mOK = false;
 
 function checkReady() {
   if (sqlOK && mOK) {
-    document.getElementById('loadMsg').textContent = '✅ Ready! Click to start.';
-    document.getElementById('startBtn').disabled = false;
+    isEngineReady = true;
+    enableAuthControls();
   }
 }
 
@@ -1147,6 +1382,24 @@ if (window.require) {
   if (wrap) wrap.innerHTML = '<textarea id="fallback-editor" spellcheck="false"></textarea>';
   mOK = true;
   checkReady();
+}
+
+// Initialize Supabase Auth state observer
+if (supabase) {
+  supabase.auth.onAuthStateChange(async (event, session) => {
+    if (session && session.user) {
+      G.user = session.user;
+      await loadCloudProgress();
+    } else {
+      G.user = null;
+    }
+    enableAuthControls();
+  });
+} else {
+  // Offline / Ad-blocker fallback
+  setTimeout(() => {
+    enableAuthControls();
+  }, 100);
 }
 
 function startGame() {
