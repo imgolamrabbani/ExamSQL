@@ -24,9 +24,9 @@ const G = {
 // Supabase Client Initialization
 const supabaseUrl = 'https://wxxlzukqsalbvjwzwrti.supabase.co';
 const supabaseKey = 'sb_publishable_6qkxpCkPeYNXjH8dT6JzAw_lunNozei';
-let supabase = null;
+let sb = null;
 if (window.supabase) {
-  supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+  sb = window.supabase.createClient(supabaseUrl, supabaseKey);
 }
 
 
@@ -562,9 +562,9 @@ function saveLocalState() {
 }
 
 async function saveCloudProgress() {
-  if (!supabase || !G.user) return;
+  if (!sb || !G.user) return;
   try {
-    const { error } = await supabase
+    const { error } = await sb
       .from('user_progress')
       .upsert({
         user_id: G.user.id,
@@ -586,15 +586,15 @@ async function saveCloudProgress() {
 
 function saveProgress() {
   saveLocalState();
-  if (supabase && G.user) {
+  if (sb && G.user) {
     saveCloudProgress();
   }
 }
 
 async function loadCloudProgress() {
-  if (!supabase || !G.user) return;
+  if (!sb || !G.user) return;
   try {
-    const { data, error } = await supabase
+    const { data, error } = await sb
       .from('user_progress')
       .select('*')
       .eq('user_id', G.user.id)
@@ -665,7 +665,7 @@ async function loadCloudProgress() {
         G.bookmarks = localBookmarks || [];
       }
       
-      const { error: insertErr } = await supabase
+      const { error: insertErr } = await sb
         .from('user_progress')
         .insert([{
           user_id: G.user.id,
@@ -775,14 +775,14 @@ function enableAuthControls() {
 }
 
 async function loginWithGoogle() {
-  if (!supabase) {
+  if (!sb) {
     alert("Supabase client is offline or failed to load. Check your internet connection.");
     return;
   }
   playSound('confirm');
   sessionStorage.setItem('examsql_signing_in', 'true');
   
-  const { error } = await supabase.auth.signInWithOAuth({
+  const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: window.location.origin + window.location.pathname
@@ -800,9 +800,9 @@ function playAsGuest() {
 }
 
 async function logout() {
-  if (supabase) {
+  if (sb) {
     playSound('confirm');
-    await supabase.auth.signOut();
+    await sb.auth.signOut();
   }
   G.user = null;
   localStorage.removeItem('examsql_progress');
@@ -1385,8 +1385,8 @@ if (window.require) {
 }
 
 // Initialize Supabase Auth state observer
-if (supabase) {
-  supabase.auth.onAuthStateChange(async (event, session) => {
+if (sb) {
+  sb.auth.onAuthStateChange(async (event, session) => {
     if (session && session.user) {
       G.user = session.user;
       await loadCloudProgress();
