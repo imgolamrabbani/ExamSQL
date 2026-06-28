@@ -1,6 +1,26 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      const div = document.createElement('div');
+      div.style.position = 'fixed';
+      div.style.top = '10px';
+      div.style.left = '10px';
+      div.style.right = '10px';
+      div.style.background = '#ff0055';
+      div.style.color = 'white';
+      div.style.padding = '15px';
+      div.style.zIndex = '99999';
+      div.style.fontFamily = 'monospace';
+      div.style.fontSize = '14px';
+      div.style.border = '3px solid white';
+      div.style.whiteSpace = 'pre-wrap';
+      div.innerHTML = '<h3>🚨 ARCADE FAULT DETECTED:</h3>' + msg + '\n\nURL: ' + url + '\nLine: ' + line + ' | Col: ' + col;
+      document.body.appendChild(div);
+      return false;
+    };
+  </script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ExamSQL — CSE 3101 SQL Learning Game</title>
